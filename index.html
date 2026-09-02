@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CuraTrack Pro - Health & Medicine Tracker</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans antialiased">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const INITIAL_MEDS = [
+      { id: 1, name: "Metformin HCl", dosage: "500mg", time: "08:00 AM", taken: true, instructions: "Take with food" },
+      { id: 2, name: "Lisinopril", dosage: "10mg", time: "08:30 AM", taken: true, instructions: "Take with water" },
+      { id: 3, name: "Atorvastatin", dosage: "20mg", time: "09:30 PM", taken: false, instructions: "Take before bed" }
+    ];
+
+    const INITIAL_VITALS = [
+      { id: 1, type: "Blood Pressure", value: "122/79 mmHg", pulse: "72 bpm", date: "Today" },
+      { id: 2, type: "Blood Glucose", value: "98 mg/dL", pulse: "Fasting", date: "Today" }
+    ];
+
+    function App() {
+      const [activeTab, setActiveTab] = useState("dashboard");
+      const [meds, setMeds] = useState(() => {
+        const saved = localStorage.getItem("curatrack_meds");
+        return saved ? JSON.parse(saved) : INITIAL_MEDS;
+      });
+      const [vitals, setVitals] = useState(() => {
+        const saved = localStorage.getItem("curatrack_vitals");
+        return saved ? JSON.parse(saved) : INITIAL_VITALS;
+      });
+
+      useEffect(() => {
+        localStorage.setItem("curatrack_meds", JSON.stringify(meds));
+        if (window.lucide) window.lucide.createIcons();
+      }, [meds, activeTab]);
+
+      const toggleDose = (id) => {
+        setMeds(prev => prev.map(m => m.id === id ? { ...m, taken: !m.taken } : m));
+      };
+
+      const addMedication = (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const newMed = {
+          id: Date.now(),
+          name: form.name.value,
+          dosage: form.dosage.value,
+          time: form.time.value,
+          instructions: form.instructions.value,
+          taken: false
+        };
+        setMeds([...meds, newMed]);
+        form.reset();
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col">
+          {/* Header */}
+          <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold text-xl">
+                +
+              </div>
+              <div>
+                <h1 className="font-bold text-lg text-slate-800">CuraTrack Pro</h1>
+                <p className="text-xs text-slate-500">Medicine Reminder & Health Tracker</p>
+              </div>
+            </div>
+            <span className="text-xs bg-emerald-50 text-emerald-700 font-bold px-3 py-1 rounded-full border border-emerald-200">
+              Active Regimen
+            </span>
+          </header>
+
+          <div className="flex-1 max-w-6xl w-full mx-auto p-6 flex flex-col md:flex-row gap-6">
+            {/* Sidebar Navigation */}
+            <aside className="w-full md:w-60 space-y-2">
+              <button
+                onClick={() => setActiveTab("dashboard")}
+                className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
+                  activeTab === "dashboard" ? "bg-teal-600 text-white" : "bg-white text-slate-700 hover:bg-slate-100"
+                }`}
+              >
+                Dashboard & Doses
+              </button>
+              <button
+                onClick={() => setActiveTab("passport")}
+                className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
+                  activeTab === "passport" ? "bg-teal-600 text-white" : "bg-white text-slate-700 hover:bg-slate-100"
+                }`}
+              >
+                Health Passport
+              </button>
+              <button
+                onClick={() => setActiveTab("locator")}
+                className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
+                  activeTab === "locator" ? "bg-teal-600 text-white" : "bg-white text-slate-700 hover:bg-slate-100"
+                }`}
+              >
+                Hospital & Blood Bank
+              </button>
+            </aside>
+
+            {/* Main Content Area */}
+            <main className="flex-1">
+              {activeTab === "dashboard" && (
+                <div className="space-y-6">
+                  {/* Today's Stats Banner */}
+                  <div className="bg-gradient-to-r from-teal-700 to-slate-900 rounded-2xl p-6 text-white">
+                    <h2 className="text-xl font-bold">Daily Dose Overview</h2>
+                    <p className="text-teal-100 text-xs mt-1">
+                      {meds.filter(m => m.taken).length} of {meds.length} medications taken today.
+                    </p>
+                  </div>
+
+                  {/* Vitals Summary */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {vitals.map(v => (
+                      <div key={v.id} className="bg-white p-4 rounded-xl border border-slate-200">
+                        <span className="text-xs text-slate-500 block">{v.type}</span>
+                        <span className="text-xl font-bold text-slate-800">{v.value}</span>
+                        <span className="text-xs text-slate-400 block mt-1">{v.pulse}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Medication List */}
+                  <div className="bg-white rounded-2xl p-5 border border-slate-200 space-y-3">
+                    <h3 className="font-bold text-slate-800 text-sm">Scheduled Reminders</h3>
+                    {meds.map(med => (
+                      <div
+                        key={med.id}
+                        className={`p-3.5 rounded-xl border flex items-center justify-between transition ${
+                          med.taken ? "bg-emerald-50/50 border-emerald-200" : "bg-white border-slate-200"
+                        }`}
+                      >
+                        <div>
+                          <h4 className={`font-bold text-sm ${med.taken ? "line-through text-slate-400" : "text-slate-800"}`}>
+                            {med.name} ({med.dosage})
+                          </h4>
+                          <p className="text-xs text-slate-500">{med.time} &bull; {med.instructions}</p>
+                        </div>
+                        <button
+                          onClick={() => toggleDose(med.id)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
+                            med.taken ? "bg-emerald-100 text-emerald-800" : "bg-teal-600 text-white"
+                          }`}
+                        >
+                          {med.taken ? "Taken" : "Take Now"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Add Medication Form */}
+                  <form onSubmit={addMedication} className="bg-white p-5 rounded-2xl border border-slate-200 space-y-3">
+                    <h3 className="font-bold text-slate-800 text-sm">Add New Medicine</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <input name="name" required placeholder="Medicine Name" className="p-2 border rounded-lg text-xs" />
+                      <input name="dosage" required placeholder="Dosage (e.g. 500mg)" className="p-2 border rounded-lg text-xs" />
+                      <input name="time" required placeholder="Time (e.g. 09:00 PM)" className="p-2 border rounded-lg text-xs" />
+                      <input name="instructions" placeholder="Instructions (e.g. After dinner)" className="p-2 border rounded-lg text-xs" />
+                    </div>
+                    <button type="submit" className="w-full py-2 bg-slate-900 text-white text-xs font-bold rounded-lg">
+                      Save Reminder
+                    </button>
+                  </form>
+                </div>
+              )}
+
+              {activeTab === "passport" && (
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 space-y-4">
+                  <h2 className="text-lg font-bold text-slate-800">Personal Health Passport</h2>
+                  <div className="grid grid-cols-2 gap-4 text-xs">
+                    <div><span className="text-slate-400">Name:</span> <strong className="text-slate-800 block">Alexander M. Reed</strong></div>
+                    <div><span className="text-slate-400">Blood Type:</span> <strong className="text-slate-800 block">O-Positive (O+)</strong></div>
+                    <div><span className="text-slate-400">Known Allergies:</span> <strong className="text-rose-600 block">Penicillin, Peanuts</strong></div>
+                    <div><span className="text-slate-400">Conditions:</span> <strong className="text-slate-800 block">Hypertension, Type 2 Diabetes</strong></div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "locator" && (
+                <div className="space-y-4">
+                  <div className="bg-white p-5 rounded-2xl border border-slate-200">
+                    <h3 className="font-bold text-sm text-slate-800">Nearest Emergency Hospital</h3>
+                    <p className="text-xs text-slate-600 mt-1">City General Medical Center &bull; 1.2 km away</p>
+                    <p className="text-xs text-emerald-600 font-bold mt-1">Open 24/7 &bull; ER Wait Time: ~12 mins</p>
+                  </div>
+                  <div className="bg-white p-5 rounded-2xl border border-slate-200">
+                    <h3 className="font-bold text-sm text-slate-800">Nearest Blood Bank</h3>
+                    <p className="text-xs text-slate-600 mt-1">Red Cross Regional Depot &bull; 1.8 km away</p>
+                    <p className="text-xs text-rose-600 font-bold mt-1">O+ Stock: 42 Units Available</p>
+                  </div>
+                </div>
+              )}
+            </main>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
