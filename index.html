@@ -3,32 +3,269 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CuraTrack Pro - Health & Medicine Tracker</title>
+  <title>CuraTrack Pro — Smart Health & Medication Suite</title>
   
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0fdf9',
+              100: '#ccfbf1',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              800: '#115e59',
+              900: '#134e4a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18 & Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Custom subtle scrollbar and print styles */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #health-passport-card, #health-passport-card * {
+        visibility: visible;
+      }
+      #health-passport-card {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+    }
+  </style>
 </head>
-<body class="bg-slate-50 text-slate-900 font-sans antialiased">
+<body class="bg-slate-50 text-slate-900 font-sans antialiased selection:bg-teal-500 selection:text-white">
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    const Icon = ({ name, className = "w-5 h-5", ...props }) => {
+      const icons = {
+        pill: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" {...props}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="m8.5 8.5 7 7" />
+          </svg>
+        ),
+        activity: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" {...props}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M22 12h-4l-3 9L9 3l-3 9H2" />
+          </svg>
+        ),
+        passport: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" {...props}>
+            <rect width="18" height="18" x="3" y="3" rx="2" />
+            <circle cx="12" cy="10" r="3" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7 21v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2" />
+          </svg>
+        ),
+        hospital: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" {...props}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5m-4 0h4" />
+          </svg>
+        ),
+        plus: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" {...props}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+        ),
+        check: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" {...props}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+          </svg>
+        ),
+        trash: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" {...props}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+          </svg>
+        ),
+        phone: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" {...props}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
+          </svg>
+        ),
+        clock: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" {...props}>
+            <circle cx="12" cy="12" r="9" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+        ),
+        pin: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" {...props}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+          </svg>
+        ),
+        droplet: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" {...props}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+          </svg>
+        ),
+        shieldAlert: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" {...props}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.002A11.959 11.959 0 0 1 12 2.714ZM12 15.75h.007v.008H12v-.008Z" />
+          </svg>
+        ),
+        search: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" {...props}>
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        ),
+        printer: (
+          <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" {...props}>
+            <polyline points="6 9 6 2 18 2 18 9" />
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+            <rect width="12" height="8" x="6" y="14" />
+          </svg>
+        )
+      };
+
+      return icons[name] || null;
+    };
 
     const INITIAL_MEDS = [
-      { id: 1, name: "Metformin HCl", dosage: "500mg", time: "08:00 AM", taken: true, instructions: "Take with food" },
-      { id: 2, name: "Lisinopril", dosage: "10mg", time: "08:30 AM", taken: true, instructions: "Take with water" },
-      { id: 3, name: "Atorvastatin", dosage: "20mg", time: "09:30 PM", taken: false, instructions: "Take before bed" }
+      { id: 1, name: "Metformin HCl", dosage: "500mg", time: "08:00 AM", taken: true, category: "Diabetes", instructions: "Take with food", streak: 12 },
+      { id: 2, name: "Lisinopril", dosage: "10mg", time: "08:30 AM", taken: true, category: "Blood Pressure", instructions: "Take with water", streak: 19 },
+      { id: 3, name: "Omega-3 Fish Oil", dosage: "1000mg", time: "01:00 PM", taken: false, category: "Supplement", instructions: "Take after lunch", streak: 5 },
+      { id: 4, name: "Atorvastatin", dosage: "20mg", time: "09:30 PM", taken: false, category: "Cholesterol", instructions: "Take before sleep", streak: 14 }
     ];
 
     const INITIAL_VITALS = [
-      { id: 1, type: "Blood Pressure", value: "122/79 mmHg", pulse: "72 bpm", date: "Today" },
-      { id: 2, type: "Blood Glucose", value: "98 mg/dL", pulse: "Fasting", date: "Today" }
+      { id: 1, type: "Blood Pressure", value: "122/78", unit: "mmHg", status: "Optimal", pulse: "72 bpm", date: "Today, 08:30 AM", trend: "stable" },
+      { id: 2, type: "Fasting Glucose", value: "96", unit: "mg/dL", status: "Normal", pulse: "Pre-meal", date: "Today, 07:45 AM", trend: "down" },
+      { id: 3, type: "Heart Rate", value: "68", unit: "BPM", status: "Resting", pulse: "Normal Rhythm", date: "Today, 10:15 AM", trend: "up" },
+      { id: 4, type: "Blood Oxygen", value: "99", unit: "% SpO2", status: "Healthy", pulse: "Ambient Room Air", date: "Yesterday", trend: "stable" }
     ];
+
+    const EMERGENCY_FACILITIES = [
+      {
+        id: "h1",
+        type: "hospital",
+        name: "Metro Health Academic Medical Center",
+        address: "742 Evergreen Terrace, Medical District",
+        distance: "1.2 km",
+        timeEst: "4 mins",
+        phone: "+1 (555) 234-5678",
+        status: "Open 24/7",
+        traumaLevel: "Level 1 Trauma",
+        erWait: "14 mins"
+      },
+      {
+        id: "h2",
+        type: "hospital",
+        name: "St. Jude Community Hospital & Urgent Care",
+        address: "189 Grand River Blvd",
+        distance: "2.8 km",
+        timeEst: "9 mins",
+        phone: "+1 (555) 890-1234",
+        status: "Open 24/7",
+        traumaLevel: "Level 2 Emergency",
+        erWait: "22 mins"
+      },
+      {
+        id: "b1",
+        type: "bloodbank",
+        name: "American Red Cross Regional Depot",
+        address: "510 Health Science Parkway",
+        distance: "1.9 km",
+        timeEst: "6 mins",
+        phone: "+1 (555) 345-9876",
+        status: "Open until 8:00 PM",
+        inventory: {
+          "O+": "42 Units (High)",
+          "O-": "8 Units (Critical Need)",
+          "A+": "34 Units (Stable)",
+          "B+": "27 Units (Stable)",
+          "AB+": "19 Units (Good)"
+        }
+      },
+      {
+        id: "b2",
+        type: "bloodbank",
+        name: "Community LifeShare Donor Center",
+        address: "99 Central Way, Suite 104",
+        distance: "3.4 km",
+        timeEst: "11 mins",
+        phone: "+1 (555) 778-9900",
+        status: "Open until 6:30 PM",
+        inventory: {
+          "O+": "25 Units (Stable)",
+          "O-": "3 Units (Emergency Shortage)",
+          "A+": "18 Units (Stable)",
+          "B+": "12 Units (Low)"
+        }
+      },
+      {
+        id: "p1",
+        type: "pharmacy",
+        name: "CarePoint 24-Hour Drive-Thru Pharmacy",
+        address: "410 North Oak Boulevard",
+        distance: "0.8 km",
+        timeEst: "3 mins",
+        phone: "+1 (555) 667-2233",
+        status: "24/7 Service",
+        erWait: "Rx Ready in 15m"
+      }
+    ];
+
+    const playSuccessChime = () => {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.35);
+      } catch (e) {
+        // AudioContext disabled or unsupported silently ignored
+      }
+    };
 
     function App() {
       const [activeTab, setActiveTab] = useState("dashboard");
@@ -41,172 +278,955 @@
         return saved ? JSON.parse(saved) : INITIAL_VITALS;
       });
 
+      // Filter state for medications
+      const [medFilter, setMedFilter] = useState("all");
+      // Search & filter for locator
+      const [locatorFilter, setLocatorFilter] = useState("all");
+      const [locatorSearch, setLocatorSearch] = useState("");
+
+      // Modal state for adding new medication
+      const [isAddMedOpen, setIsAddMedOpen] = useState(false);
+      // Modal state for logging vitals
+      const [isLogVitalOpen, setIsLogVitalOpen] = useState(false);
+      // In-app Toast message
+      const [toast, setToast] = useState(null);
+
       useEffect(() => {
         localStorage.setItem("curatrack_meds", JSON.stringify(meds));
-        if (window.lucide) window.lucide.createIcons();
-      }, [meds, activeTab]);
+      }, [meds]);
 
-      const toggleDose = (id) => {
-        setMeds(prev => prev.map(m => m.id === id ? { ...m, taken: !m.taken } : m));
+      useEffect(() => {
+        localStorage.setItem("curatrack_vitals", JSON.stringify(vitals));
+      }, [vitals]);
+
+      const triggerToast = (msg, type = "success") => {
+        setToast({ msg, type });
+        setTimeout(() => {
+          setToast(null);
+        }, 3200);
       };
 
-      const addMedication = (e) => {
+      const adherenceStats = useMemo(() => {
+        const total = meds.length;
+        const taken = meds.filter(m => m.taken).length;
+        const percentage = total === 0 ? 0 : Math.round((taken / total) * 100);
+        return { total, taken, percentage, pending: total - taken };
+      }, [meds]);
+
+      const toggleDose = (id) => {
+        setMeds(prev => prev.map(m => {
+          if (m.id === id) {
+            const nextState = !m.taken;
+            if (nextState) {
+              playSuccessChime();
+              triggerToast(`Marked ${m.name} as taken! Streak +1`);
+            } else {
+              triggerToast(`Marked ${m.name} as pending.`);
+            }
+            return {
+              ...m,
+              taken: nextState,
+              streak: nextState ? (m.streak || 0) + 1 : Math.max(0, (m.streak || 1) - 1)
+            };
+          }
+          return m;
+        }));
+      };
+
+      const removeMedication = (id, name) => {
+        setMeds(prev => prev.filter(m => m.id !== id));
+        triggerToast(`Removed ${name} from regimen.`, "info");
+      };
+
+      const handleAddMed = (e) => {
         e.preventDefault();
         const form = e.target;
         const newMed = {
           id: Date.now(),
-          name: form.name.value,
-          dosage: form.dosage.value,
-          time: form.time.value,
-          instructions: form.instructions.value,
-          taken: false
+          name: form.name.value.trim(),
+          dosage: form.dosage.value.trim(),
+          time: form.time.value.trim(),
+          category: form.category.value || "General",
+          instructions: form.instructions.value.trim() || "Follow physician advice",
+          taken: false,
+          streak: 0
         };
-        setMeds([...meds, newMed]);
+        setMeds(prev => [newMed, ...prev]);
+        setIsAddMedOpen(false);
         form.reset();
+        triggerToast(`Added ${newMed.name} to routine.`);
       };
 
+      const handleAddVital = (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const newVital = {
+          id: Date.now(),
+          type: form.type.value,
+          value: form.value.value.trim(),
+          unit: form.unit.value.trim(),
+          status: form.status.value || "Normal",
+          pulse: form.notes.value.trim() || "Routine Check",
+          date: "Just now",
+          trend: "stable"
+        };
+        setVitals(prev => [newVital, ...prev]);
+        setIsLogVitalOpen(false);
+        form.reset();
+        triggerToast(`Vital metric logged successfully!`);
+      };
+
+      const filteredMeds = meds.filter(m => {
+        if (medFilter === "taken") return m.taken;
+        if (medFilter === "pending") return !m.taken;
+        return true;
+      });
+
+      const filteredFacilities = EMERGENCY_FACILITIES.filter(item => {
+        const matchesType = locatorFilter === "all" || item.type === locatorFilter;
+        const matchesQuery = item.name.toLowerCase().includes(locatorSearch.toLowerCase()) ||
+                             item.address.toLowerCase().includes(locatorSearch.toLowerCase());
+        return matchesType && matchesQuery;
+      });
+
       return (
-        <div className="min-h-screen flex flex-col">
-          {/* Header */}
-          <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold text-xl">
-                +
-              </div>
-              <div>
-                <h1 className="font-bold text-lg text-slate-800">CuraTrack Pro</h1>
-                <p className="text-xs text-slate-500">Medicine Reminder & Health Tracker</p>
+        <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-teal-500 selection:text-white pb-12">
+          
+          {/* Top Medical Alert Bar */}
+          <div className="bg-slate-900 text-slate-300 text-xs py-1.5 px-4 flex items-center justify-between border-b border-slate-800">
+            <div className="flex items-center gap-2 max-w-6xl mx-auto w-full">
+              <span className="inline-flex items-center gap-1 text-teal-400 font-semibold uppercase tracking-wider text-[10px]">
+                <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span> Live Patient Mode
+              </span>
+              <span className="text-slate-500">•</span>
+              <span>Emergency Services Hotline: <strong>911 / 112</strong></span>
+              <div className="ml-auto hidden sm:flex items-center gap-4 text-slate-400 text-[11px]">
+                <span>Today: <strong>{new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</strong></span>
+                <span className="bg-slate-800 px-2 py-0.5 rounded text-teal-300 font-mono">HIPAA Encrypted Local</span>
               </div>
             </div>
-            <span className="text-xs bg-emerald-50 text-emerald-700 font-bold px-3 py-1 rounded-full border border-emerald-200">
-              Active Regimen
-            </span>
+          </div>
+
+          {/* Main Navigation Header */}
+          <header className="bg-white/90 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 shadow-sm transition">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-500 text-white flex items-center justify-center shadow-lg shadow-teal-500/20 ring-4 ring-teal-50">
+                  <Icon name="pill" className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="font-extrabold text-lg sm:text-xl text-slate-900 tracking-tight">CuraTrack <span className="text-teal-600">Pro</span></h1>
+                    <span className="bg-teal-50 text-teal-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-teal-200 uppercase tracking-wide">v2.4</span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium">Digital Medication & Emergency Care Passport</p>
+                </div>
+              </div>
+
+              {/* Quick Actions in Header */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsAddMedOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-semibold text-xs transition shadow-sm shadow-teal-600/30 cursor-pointer"
+                >
+                  <Icon name="plus" className="w-4 h-4" />
+                  <span className="hidden sm:inline">Add Medication</span>
+                  <span className="sm:hidden">Add</span>
+                </button>
+              </div>
+            </div>
           </header>
 
-          <div className="flex-1 max-w-6xl w-full mx-auto p-6 flex flex-col md:flex-row gap-6">
+          {/* Toast Notification Container */}
+          {toast && (
+            <div className="fixed bottom-6 right-6 z-50 animate-bounce transition duration-300">
+              <div className={`px-4 py-3 rounded-2xl shadow-xl border flex items-center gap-3 text-sm font-medium ${
+                toast.type === 'info' 
+                  ? 'bg-slate-900 text-white border-slate-700' 
+                  : 'bg-emerald-600 text-white border-emerald-500 shadow-emerald-600/30'
+              }`}>
+                <Icon name="check" className="w-5 h-5 text-teal-200" />
+                <span>{toast.msg}</span>
+              </div>
+            </div>
+          )}
+
+          {}
+          <div className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 flex flex-col md:flex-row gap-6">
+            
             {/* Sidebar Navigation */}
-            <aside className="w-full md:w-60 space-y-2">
-              <button
-                onClick={() => setActiveTab("dashboard")}
-                className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
-                  activeTab === "dashboard" ? "bg-teal-600 text-white" : "bg-white text-slate-700 hover:bg-slate-100"
-                }`}
-              >
-                Dashboard & Doses
-              </button>
-              <button
-                onClick={() => setActiveTab("passport")}
-                className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
-                  activeTab === "passport" ? "bg-teal-600 text-white" : "bg-white text-slate-700 hover:bg-slate-100"
-                }`}
-              >
-                Health Passport
-              </button>
-              <button
-                onClick={() => setActiveTab("locator")}
-                className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
-                  activeTab === "locator" ? "bg-teal-600 text-white" : "bg-white text-slate-700 hover:bg-slate-100"
-                }`}
-              >
-                Hospital & Blood Bank
-              </button>
+            <aside className="w-full md:w-64 shrink-0 space-y-4">
+              <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm space-y-1">
+                <button
+                  onClick={() => setActiveTab("dashboard")}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition ${
+                    activeTab === "dashboard"
+                      ? "bg-teal-600 text-white shadow-md shadow-teal-600/20"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Icon name="activity" className="w-4 h-4" />
+                    <span>Doses & Dashboard</span>
+                  </div>
+                  {adherenceStats.pending > 0 && (
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${activeTab === 'dashboard' ? 'bg-teal-800 text-teal-100' : 'bg-amber-100 text-amber-700'}`}>
+                      {adherenceStats.pending} left
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => setActiveTab("passport")}
+                  className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition ${
+                    activeTab === "passport"
+                      ? "bg-teal-600 text-white shadow-md shadow-teal-600/20"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  }`}
+                >
+                  <Icon name="passport" className="w-4 h-4" />
+                  <span>Health Passport (ID)</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab("locator")}
+                  className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition ${
+                    activeTab === "locator"
+                      ? "bg-teal-600 text-white shadow-md shadow-teal-600/20"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  }`}
+                >
+                  <Icon name="hospital" className="w-4 h-4" />
+                  <span>Emergency Locator</span>
+                </button>
+              </div>
+
+              {/* Patient Quick Profile Card */}
+              <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-slate-900 text-teal-400 font-bold flex items-center justify-center text-sm border-2 border-teal-500">
+                    AR
+                  </div>
+                  <div className="overflow-hidden">
+                    <h3 className="font-bold text-sm text-slate-800 truncate">Alexander M. Reed</h3>
+                    <p className="text-[11px] text-slate-500">Patient ID: #CR-88291</p>
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <span className="text-slate-500">Blood Type:</span>
+                  <span className="font-bold bg-rose-50 text-rose-600 border border-rose-200 px-2 py-0.5 rounded-md">O-Positive</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-500">Primary Care:</span>
+                  <span className="font-medium text-slate-700">Dr. Sarah Vance</span>
+                </div>
+              </div>
+
+              {/* Adherence Ring Card */}
+              <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-4 rounded-2xl shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-teal-400">Daily Compliance</span>
+                  <span className="text-xs font-mono font-bold text-emerald-300">{adherenceStats.percentage}%</span>
+                </div>
+                <div className="w-full bg-slate-700 h-2.5 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-gradient-to-r from-teal-400 to-emerald-400 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${adherenceStats.percentage}%` }}
+                  ></div>
+                </div>
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  {adherenceStats.taken === adherenceStats.total 
+                    ? "Great job! All scheduled doses for today have been completed."
+                    : `${adherenceStats.pending} more dose${adherenceStats.pending > 1 ? 's' : ''} remaining for full daily adherence.`
+                  }
+                </p>
+              </div>
             </aside>
 
-            {/* Main Content Area */}
-            <main className="flex-1">
+            {}
+            <main className="flex-1 min-w-0">
+              
+              {/* TAB 1: DASHBOARD & DOSES */}
               {activeTab === "dashboard" && (
                 <div className="space-y-6">
-                  {/* Today's Stats Banner */}
-                  <div className="bg-gradient-to-r from-teal-700 to-slate-900 rounded-2xl p-6 text-white">
-                    <h2 className="text-xl font-bold">Daily Dose Overview</h2>
-                    <p className="text-teal-100 text-xs mt-1">
-                      {meds.filter(m => m.taken).length} of {meds.length} medications taken today.
-                    </p>
-                  </div>
-
-                  {/* Vitals Summary */}
-                  <div className="grid grid-cols-2 gap-4">
-                    {vitals.map(v => (
-                      <div key={v.id} className="bg-white p-4 rounded-xl border border-slate-200">
-                        <span className="text-xs text-slate-500 block">{v.type}</span>
-                        <span className="text-xl font-bold text-slate-800">{v.value}</span>
-                        <span className="text-xs text-slate-400 block mt-1">{v.pulse}</span>
+                  
+                  {/* Hero Metric Banner */}
+                  <div className="relative overflow-hidden bg-gradient-to-r from-teal-800 via-teal-700 to-slate-900 rounded-3xl p-6 sm:p-7 text-white shadow-lg shadow-teal-900/10">
+                    <div className="relative z-10 max-w-xl">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-600/60 text-teal-200 text-xs font-semibold mb-3 backdrop-blur-sm border border-teal-400/20">
+                        <Icon name="clock" className="w-3.5 h-3.5" /> Next Dose: Lisinopril at 08:30 AM
                       </div>
-                    ))}
-                  </div>
+                      <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Today's Treatment Plan</h2>
+                      <p className="text-teal-100/80 text-xs sm:text-sm mt-1.5 leading-relaxed">
+                        Keep up your regimen to maintain steady therapeutic levels. Log every dose accurately to synchronize with your health passport.
+                      </p>
 
-                  {/* Medication List */}
-                  <div className="bg-white rounded-2xl p-5 border border-slate-200 space-y-3">
-                    <h3 className="font-bold text-slate-800 text-sm">Scheduled Reminders</h3>
-                    {meds.map(med => (
-                      <div
-                        key={med.id}
-                        className={`p-3.5 rounded-xl border flex items-center justify-between transition ${
-                          med.taken ? "bg-emerald-50/50 border-emerald-200" : "bg-white border-slate-200"
-                        }`}
-                      >
-                        <div>
-                          <h4 className={`font-bold text-sm ${med.taken ? "line-through text-slate-400" : "text-slate-800"}`}>
-                            {med.name} ({med.dosage})
-                          </h4>
-                          <p className="text-xs text-slate-500">{med.time} &bull; {med.instructions}</p>
-                        </div>
+                      <div className="mt-5 flex flex-wrap items-center gap-3">
                         <button
-                          onClick={() => toggleDose(med.id)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
-                            med.taken ? "bg-emerald-100 text-emerald-800" : "bg-teal-600 text-white"
-                          }`}
+                          onClick={() => setIsAddMedOpen(true)}
+                          className="px-4 py-2 bg-white text-teal-900 hover:bg-teal-50 font-bold text-xs rounded-xl transition shadow active:scale-95"
                         >
-                          {med.taken ? "Taken" : "Take Now"}
+                          + Add Medication
+                        </button>
+                        <button
+                          onClick={() => setIsLogVitalOpen(true)}
+                          className="px-4 py-2 bg-teal-600/50 hover:bg-teal-600/70 border border-teal-400/30 text-white font-bold text-xs rounded-xl transition backdrop-blur-sm active:scale-95"
+                        >
+                          + Log Vital Reading
                         </button>
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Add Medication Form */}
-                  <form onSubmit={addMedication} className="bg-white p-5 rounded-2xl border border-slate-200 space-y-3">
-                    <h3 className="font-bold text-slate-800 text-sm">Add New Medicine</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <input name="name" required placeholder="Medicine Name" className="p-2 border rounded-lg text-xs" />
-                      <input name="dosage" required placeholder="Dosage (e.g. 500mg)" className="p-2 border rounded-lg text-xs" />
-                      <input name="time" required placeholder="Time (e.g. 09:00 PM)" className="p-2 border rounded-lg text-xs" />
-                      <input name="instructions" placeholder="Instructions (e.g. After dinner)" className="p-2 border rounded-lg text-xs" />
                     </div>
-                    <button type="submit" className="w-full py-2 bg-slate-900 text-white text-xs font-bold rounded-lg">
-                      Save Reminder
-                    </button>
-                  </form>
+
+                    {/* Decorative Background Pill Art */}
+                    <div className="absolute right-4 -bottom-6 opacity-10 pointer-events-none">
+                      <Icon name="pill" className="w-64 h-64 text-white" />
+                    </div>
+                  </div>
+
+                  {/* Vitals Summary Grid */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2">
+                        <Icon name="activity" className="w-4 h-4 text-teal-600" />
+                        Key Health Biomarkers
+                      </h3>
+                      <button
+                        onClick={() => setIsLogVitalOpen(true)}
+                        className="text-xs text-teal-700 hover:text-teal-800 font-semibold"
+                      >
+                        + Record Reading
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                      {vitals.map(v => (
+                        <div key={v.id} className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-teal-300 transition group">
+                          <div className="flex items-center justify-between text-xs mb-1">
+                            <span className="text-slate-500 font-medium">{v.type}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              v.status === 'Optimal' || v.status === 'Normal' || v.status === 'Healthy'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-amber-50 text-amber-700 border border-amber-200'
+                            }`}>
+                              {v.status}
+                            </span>
+                          </div>
+                          <div className="flex items-baseline gap-1.5 my-1">
+                            <span className="text-2xl font-black text-slate-900 tracking-tight group-hover:text-teal-700 transition">{v.value}</span>
+                            <span className="text-xs font-semibold text-slate-400">{v.unit}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+                            <span>{v.pulse}</span>
+                            <span className="text-[10px] text-slate-400">{v.date}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {}
+                  <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-sm space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100">
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                          <Icon name="pill" className="w-5 h-5 text-teal-600" />
+                          Prescription & Supplement Doses
+                        </h3>
+                        <p className="text-xs text-slate-500">Track dosage schedule, meal instructions and streak</p>
+                      </div>
+
+                      {/* Filter Badges */}
+                      <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                        {["all", "pending", "taken"].map(f => (
+                          <button
+                            key={f}
+                            onClick={() => setMedFilter(f)}
+                            className={`px-3 py-1 rounded-lg text-xs font-bold capitalize transition ${
+                              medFilter === f
+                                ? "bg-white text-slate-900 shadow-sm"
+                                : "text-slate-500 hover:text-slate-900"
+                            }`}
+                          >
+                            {f}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Medication Cards List */}
+                    <div className="space-y-3">
+                      {filteredMeds.length === 0 ? (
+                        <div className="p-8 text-center text-slate-400 border border-dashed rounded-2xl">
+                          <p className="text-sm font-medium">No medications found for the selected filter.</p>
+                        </div>
+                      ) : (
+                        filteredMeds.map(med => (
+                          <div
+                            key={med.id}
+                            className={`p-4 rounded-2xl border transition duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                              med.taken 
+                                ? "bg-emerald-50/40 border-emerald-200/90" 
+                                : "bg-white border-slate-200/90 hover:border-slate-300"
+                            }`}
+                          >
+                            <div className="flex items-start sm:items-center gap-3.5">
+                              {/* Round Checkbox / Toggle */}
+                              <button
+                                onClick={() => toggleDose(med.id)}
+                                aria-label={med.taken ? "Mark as untaken" : "Mark as taken"}
+                                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition ${
+                                  med.taken
+                                    ? "bg-emerald-600 text-white shadow-sm shadow-emerald-500/30"
+                                    : "border-2 border-slate-300 text-transparent hover:border-teal-600"
+                                }`}
+                              >
+                                <Icon name="check" className="w-5 h-5" />
+                              </button>
+
+                              <div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <h4 className={`font-bold text-sm sm:text-base ${med.taken ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                                    {med.name}
+                                  </h4>
+                                  <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">
+                                    {med.dosage}
+                                  </span>
+                                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-100">
+                                    {med.category}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+                                  <span className="font-semibold text-slate-700 flex items-center gap-1">
+                                    <Icon name="clock" className="w-3.5 h-3.5 text-slate-400" />
+                                    {med.time}
+                                  </span>
+                                  <span>•</span>
+                                  <span>{med.instructions}</span>
+                                  {med.streak > 0 && (
+                                    <>
+                                      <span>•</span>
+                                      <span className="text-amber-600 font-semibold">🔥 {med.streak}d streak</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 self-end sm:self-center">
+                              <button
+                                onClick={() => toggleDose(med.id)}
+                                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
+                                  med.taken
+                                    ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
+                                    : "bg-teal-600 hover:bg-teal-700 text-white shadow-sm shadow-teal-600/30 active:scale-95"
+                                }`}
+                              >
+                                {med.taken ? "Taken ✓" : "Take Now"}
+                              </button>
+                              <button
+                                onClick={() => removeMedication(med.id, med.name)}
+                                title="Remove medication"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                              >
+                                <Icon name="trash" className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
+              {}
               {activeTab === "passport" && (
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 space-y-4">
-                  <h2 className="text-lg font-bold text-slate-800">Personal Health Passport</h2>
-                  <div className="grid grid-cols-2 gap-4 text-xs">
-                    <div><span className="text-slate-400">Name:</span> <strong className="text-slate-800 block">Alexander M. Reed</strong></div>
-                    <div><span className="text-slate-400">Blood Type:</span> <strong className="text-slate-800 block">O-Positive (O+)</strong></div>
-                    <div><span className="text-slate-400">Known Allergies:</span> <strong className="text-rose-600 block">Penicillin, Peanuts</strong></div>
-                    <div><span className="text-slate-400">Conditions:</span> <strong className="text-slate-800 block">Hypertension, Type 2 Diabetes</strong></div>
+                <div className="space-y-6">
+                  
+                  {/* Passport Action Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                        <Icon name="passport" className="w-5 h-5 text-teal-600" />
+                        Official Medical Emergency Passport
+                      </h2>
+                      <p className="text-xs text-slate-500">Standardized clinical summary for ER staff, paramedics and travels.</p>
+                    </div>
+
+                    <button
+                      onClick={() => window.print()}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white hover:bg-slate-800 text-xs font-bold rounded-xl transition shadow active:scale-95 self-start sm:self-auto"
+                    >
+                      <Icon name="printer" className="w-4 h-4 text-teal-400" />
+                      Print / Save as PDF
+                    </button>
+                  </div>
+
+                  {/* Printable Medical Card */}
+                  <div id="health-passport-card" className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-md space-y-6">
+                    
+                    {/* ID Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-5 border-slate-100 gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-slate-900 to-teal-900 text-white flex items-center justify-center font-black text-xl shadow">
+                          AR
+                        </div>
+                        <div>
+                          <span className="text-[11px] font-extrabold uppercase tracking-widest text-teal-600">Patient Emergency Passport</span>
+                          <h3 className="text-2xl font-black text-slate-900">Alexander Michael Reed</h3>
+                          <p className="text-xs text-slate-500">DOB: 14 Aug 1984 &bull; Male &bull; ID: #CR-88291-MED</p>
+                        </div>
+                      </div>
+
+                      <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-2 rounded-2xl text-center self-start sm:self-auto">
+                        <span className="text-[10px] uppercase font-bold tracking-wider block">Blood Group</span>
+                        <span className="text-2xl font-black">O-POSITIVE (O+)</span>
+                      </div>
+                    </div>
+
+                    {/* Critical Clinical Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      
+                      {/* Allergy Warnings */}
+                      <div className="bg-rose-50/60 p-4 rounded-2xl border border-rose-200/80">
+                        <div className="flex items-center gap-2 text-rose-700 font-bold text-xs uppercase tracking-wider mb-2">
+                          <Icon name="shieldAlert" className="w-4 h-4 text-rose-600" />
+                          Severe Drug & Environmental Allergies
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="px-3 py-1 rounded-lg bg-rose-600 text-white font-bold text-xs shadow-sm">
+                            ⚠️ Penicillin (Anaphylaxis Risk)
+                          </span>
+                          <span className="px-3 py-1 rounded-lg bg-rose-600 text-white font-bold text-xs shadow-sm">
+                            ⚠️ Peanuts (Severe)
+                          </span>
+                          <span className="px-3 py-1 rounded-lg bg-white border border-rose-300 text-rose-800 font-semibold text-xs">
+                            Sulfa Antibiotics (Rash)
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Chronic Diagnoses */}
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                        <div className="text-slate-700 font-bold text-xs uppercase tracking-wider mb-2">
+                          Documented Chronic Conditions
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="px-3 py-1 rounded-lg bg-white border border-slate-200 text-slate-800 font-medium text-xs">
+                            Essential Hypertension (Stage 1)
+                          </span>
+                          <span className="px-3 py-1 rounded-lg bg-white border border-slate-200 text-slate-800 font-medium text-xs">
+                            Type 2 Diabetes Mellitus
+                          </span>
+                          <span className="px-3 py-1 rounded-lg bg-white border border-slate-200 text-slate-800 font-medium text-xs">
+                            Mild Sleep Apnea
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Active Prescriptions Table Preview */}
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Current Regular Medications</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        {meds.map(m => (
+                          <div key={m.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between">
+                            <div>
+                              <strong className="text-slate-800 font-semibold">{m.name}</strong> ({m.dosage})
+                              <span className="text-slate-400 block text-[11px]">{m.instructions}</span>
+                            </div>
+                            <span className="text-slate-600 font-medium bg-white px-2 py-0.5 rounded border border-slate-200 text-[10px]">
+                              {m.time}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* ICE Contacts */}
+                    <div className="border-t pt-4 border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                      <div className="bg-teal-50/50 p-3.5 rounded-xl border border-teal-100">
+                        <span className="text-teal-800 font-bold block mb-1">In Case of Emergency (ICE 1)</span>
+                        <p className="text-slate-800 font-semibold">Eleanor Reed (Spouse)</p>
+                        <a href="tel:+15554329911" className="text-teal-700 font-bold hover:underline inline-flex items-center gap-1 mt-0.5">
+                          <Icon name="phone" className="w-3.5 h-3.5" /> +1 (555) 432-9911
+                        </a>
+                      </div>
+
+                      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                        <span className="text-slate-700 font-bold block mb-1">Primary Physician</span>
+                        <p className="text-slate-800 font-semibold">Dr. Sarah Vance, MD (Internal Medicine)</p>
+                        <a href="tel:+15557761002" className="text-slate-600 font-bold hover:underline inline-flex items-center gap-1 mt-0.5">
+                          <Icon name="phone" className="w-3.5 h-3.5" /> +1 (555) 776-1002
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Organ Donor & Insurance Note */}
+                    <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+                      <span>Organ Donor: <strong className="text-slate-700">YES (Registered)</strong></span>
+                      <span>Insurance: <strong className="text-slate-700">BlueCross Comprehensive #BC-78912</strong></span>
+                      <span>Verified: <strong className="text-emerald-700">Clinical EHR Synced</strong></span>
+                    </div>
                   </div>
                 </div>
               )}
 
+              {}
               {activeTab === "locator" && (
-                <div className="space-y-4">
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200">
-                    <h3 className="font-bold text-sm text-slate-800">Nearest Emergency Hospital</h3>
-                    <p className="text-xs text-slate-600 mt-1">City General Medical Center &bull; 1.2 km away</p>
-                    <p className="text-xs text-emerald-600 font-bold mt-1">Open 24/7 &bull; ER Wait Time: ~12 mins</p>
+                <div className="space-y-6">
+                  {/* Locator Banner */}
+                  <div className="bg-gradient-to-r from-slate-900 to-teal-950 p-6 rounded-3xl text-white shadow-sm space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-600 text-white text-[11px] font-bold uppercase tracking-wider mb-2">
+                          <Icon name="shieldAlert" className="w-3.5 h-3.5" /> Emergency Dispatch Ready
+                        </div>
+                        <h2 className="text-2xl font-bold">Hospitals & Blood Bank Directory</h2>
+                        <p className="text-xs text-slate-300">Locate immediate emergency departments, donor blood supplies and 24/7 pharmacies.</p>
+                      </div>
+
+                      {/* Direct SOS Button */}
+                      <a
+                        href="tel:911"
+                        className="px-5 py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black text-sm transition shadow-lg shadow-rose-600/30 flex items-center justify-center gap-2 active:scale-95 self-start sm:self-auto"
+                      >
+                        <Icon name="phone" className="w-5 h-5" />
+                        Call 911 Direct
+                      </a>
+                    </div>
+
+                    {/* Filters & Search */}
+                    <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                      <div className="relative flex-1">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                          <Icon name="search" className="w-4 h-4" />
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="Search facility name, street or trauma tier..."
+                          value={locatorSearch}
+                          onChange={(e) => setLocatorSearch(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-800/90 text-white placeholder-slate-400 text-xs border border-slate-700 focus:outline-none focus:border-teal-400"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700 text-xs font-semibold overflow-x-auto">
+                        {[
+                          { id: "all", label: "All Facilities" },
+                          { id: "hospital", label: "Hospitals" },
+                          { id: "bloodbank", label: "Blood Banks" },
+                          { id: "pharmacy", label: "24h Pharmacies" }
+                        ].map(t => (
+                          <button
+                            key={t.id}
+                            onClick={() => setLocatorFilter(t.id)}
+                            className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition ${
+                              locatorFilter === t.id
+                                ? "bg-teal-600 text-white"
+                                : "text-slate-300 hover:text-white"
+                            }`}
+                          >
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-white p-5 rounded-2xl border border-slate-200">
-                    <h3 className="font-bold text-sm text-slate-800">Nearest Blood Bank</h3>
-                    <p className="text-xs text-slate-600 mt-1">Red Cross Regional Depot &bull; 1.8 km away</p>
-                    <p className="text-xs text-rose-600 font-bold mt-1">O+ Stock: 42 Units Available</p>
+
+                  {/* Facilities Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {filteredFacilities.map(fac => (
+                      <div key={fac.id} className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-sm flex flex-col justify-between hover:border-teal-300 transition space-y-4">
+                        <div>
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
+                              fac.type === 'hospital'
+                                ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                                : fac.type === 'bloodbank'
+                                ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            }`}>
+                              {fac.type === 'hospital' ? 'Emergency Department' : fac.type === 'bloodbank' ? 'Blood Depot' : '24/7 Pharmacy'}
+                            </span>
+                            <span className="text-xs font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-100 flex items-center gap-1">
+                              <Icon name="pin" className="w-3.5 h-3.5" /> {fac.distance} ({fac.timeEst})
+                            </span>
+                          </div>
+
+                          <h4 className="font-bold text-base text-slate-900">{fac.name}</h4>
+                          <p className="text-xs text-slate-500 mt-0.5">{fac.address}</p>
+
+                          {/* Extra specific details */}
+                          <div className="mt-3 text-xs space-y-1.5">
+                            {fac.erWait && (
+                              <div className="flex items-center gap-2 text-slate-700">
+                                <span className="font-semibold text-teal-700">Live ER Wait:</span>
+                                <span className="font-mono font-bold bg-teal-50 text-teal-800 px-2 py-0.5 rounded text-[11px]">{fac.erWait}</span>
+                                {fac.traumaLevel && <span className="text-slate-400">({fac.traumaLevel})</span>}
+                              </div>
+                            )}
+
+                            {fac.inventory && (
+                              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 space-y-1.5 mt-2">
+                                <div className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                                  <Icon name="droplet" className="w-3.5 h-3.5 text-rose-600" />
+                                  Real-Time Blood Stock Reserves:
+                                </div>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {Object.entries(fac.inventory).map(([grp, count]) => (
+                                    <span key={grp} className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                                      grp === 'O-' ? 'bg-rose-100 text-rose-800 border-rose-300' : 'bg-white text-slate-700 border-slate-200'
+                                    }`}>
+                                      {grp}: {count}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Bottom Actions */}
+                        <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                          <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            {fac.status}
+                          </span>
+
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={`tel:${fac.phone.replace(/[^0-9+]/g, '')}`}
+                              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition flex items-center gap-1"
+                            >
+                              <Icon name="phone" className="w-3.5 h-3.5 text-slate-500" />
+                              Call
+                            </a>
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fac.name + ' ' + fac.address)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition shadow-sm"
+                            >
+                              Directions
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
             </main>
           </div>
+
+          {}
+          {isAddMedOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+              <div className="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold">
+                      <Icon name="pill" className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-base text-slate-900">Add New Medication</h3>
+                      <p className="text-xs text-slate-500">Schedule dose intervals and instructions</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsAddMedOpen(false)}
+                    className="w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <form onSubmit={handleAddMed} className="space-y-3.5 text-xs">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Medication Name *</label>
+                    <input
+                      name="name"
+                      required
+                      placeholder="e.g. Amoxicillin, Metformin, Vitamin D3"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 text-slate-800"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">Dosage *</label>
+                      <input
+                        name="dosage"
+                        required
+                        placeholder="e.g. 500mg, 10ml, 2 drops"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 text-slate-800"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">Schedule Time *</label>
+                      <input
+                        name="time"
+                        required
+                        placeholder="e.g. 08:00 AM, Night"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 text-slate-800"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">Category</label>
+                      <select
+                        name="category"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white text-slate-800"
+                      >
+                        <option value="Cardiology">Cardiology</option>
+                        <option value="Diabetes">Diabetes</option>
+                        <option value="Antibiotic">Antibiotic</option>
+                        <option value="Supplement">Supplement</option>
+                        <option value="Pain Relief">Pain Relief</option>
+                        <option value="General">General</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">Food / Intake Note</label>
+                      <input
+                        name="instructions"
+                        placeholder="e.g. Take with food, With water"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 text-slate-800"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddMedOpen(false)}
+                      className="px-4 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-100 transition"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 font-bold text-white transition shadow-sm shadow-teal-600/30"
+                    >
+                      Save Medication
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {}
+          {isLogVitalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+              <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold">
+                      <Icon name="activity" className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-base text-slate-900">Record Health Biomarker</h3>
+                      <p className="text-xs text-slate-500">Add latest measurement into your history</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsLogVitalOpen(false)}
+                    className="w-8 h-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <form onSubmit={handleAddVital} className="space-y-3.5 text-xs">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Vital Measurement Type *</label>
+                    <select
+                      name="type"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white text-slate-800"
+                    >
+                      <option value="Blood Pressure">Blood Pressure</option>
+                      <option value="Fasting Glucose">Blood Glucose</option>
+                      <option value="Heart Rate">Heart Rate</option>
+                      <option value="Blood Oxygen">Blood Oxygen (SpO2)</option>
+                      <option value="Body Temperature">Body Temperature</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">Value *</label>
+                      <input
+                        name="value"
+                        required
+                        placeholder="e.g. 120/80 or 95"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 text-slate-800"
+                      />
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">Unit *</label>
+                      <input
+                        name="unit"
+                        required
+                        placeholder="e.g. mmHg, mg/dL, bpm, %"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 text-slate-800"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">Clinical Evaluation</label>
+                      <select
+                        name="status"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 bg-white text-slate-800"
+                      >
+                        <option value="Optimal">Optimal</option>
+                        <option value="Normal">Normal</option>
+                        <option value="Elevated">Elevated</option>
+                        <option value="Attention">Attention Needed</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">Context / Notes</label>
+                      <input
+                        name="notes"
+                        placeholder="e.g. Post 20m Walk, Fasting"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 text-slate-800"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsLogVitalOpen(false)}
+                      className="px-4 py-2.5 rounded-xl font-bold text-slate-600 hover:bg-slate-100 transition"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 font-bold text-white transition shadow-sm shadow-teal-600/30"
+                    >
+                      Save Vital Reading
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Footer Information */}
+          <footer className="mt-auto border-t border-slate-200 bg-white py-4 px-6 text-center text-xs text-slate-400">
+            <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+              <p>CuraTrack Pro &bull; HIPAA privacy standard compliant mock interface</p>
+              <p className="text-slate-500 font-medium">In case of life-threatening events, always call emergency dispatch immediately.</p>
+            </div>
+          </footer>
         </div>
       );
     }
